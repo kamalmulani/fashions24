@@ -1,35 +1,42 @@
-import {React, useState} from 'react';
-import Avatar from '@mui/material/Avatar';
-import Button from '@mui/material/Button';
-import CssBaseline from '@mui/material/CssBaseline';
-import TextField from '@mui/material/TextField';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
-import Link from '@mui/material/Link';
-import Paper from '@mui/material/Paper';
-import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import Typography from '@mui/material/Typography';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import DialogTitle from '@mui/material/DialogTitle';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions'
-import DialogContent from '@mui/material/DialogContent'
-import {db, auth} from '../../services/firebase'
-import {createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
-import { collection } from 'firebase/firestore';
-
+import { React, useState } from "react";
+import Avatar from "@mui/material/Avatar";
+import Button from "@mui/material/Button";
+import CssBaseline from "@mui/material/CssBaseline";
+import TextField from "@mui/material/TextField";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Checkbox from "@mui/material/Checkbox";
+import Link from "@mui/material/Link";
+import Paper from "@mui/material/Paper";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import Typography from "@mui/material/Typography";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
+import DialogTitle from "@mui/material/DialogTitle";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import { db, auth } from "../../services/firebase";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+import { collection, doc, setDoc } from "firebase/firestore";
 
 function Copyright(props) {
   return (
-    <Typography variant="body2" color="text.secondary" align="center" {...props}>
-      {'Copyright © '}
+    <Typography
+      variant="body2"
+      color="text.secondary"
+      align="center"
+      {...props}
+    >
+      {"Copyright © "}
       <Link color="inherit" href="https://mui.com/">
         Your Website
-      </Link>{' '}
+      </Link>{" "}
       {new Date().getFullYear()}
-      {'.'}
+      {"."}
     </Typography>
   );
 }
@@ -40,88 +47,88 @@ export default function SignUp() {
   const handleSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    
-    var em = data.get('email');
-    var pp = data.get('password');
-    var nm = data.get('name');
-    
+
+    var em = data.get("email");
+    var pp = data.get("password");
+    var nm = data.get("name");
+
     setpassword(pp);
     setdisplayName(nm);
     setemail(em);
     signUp();
-    
   };
 
-  function signInWithGoogle(){
+  function signInWithGoogle() {
     const provider = auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).then( userObj => { 
-
-        const userData = {
-            uid: userObj.user.uid,
-            displayName: userObj.user.displayName,
-            email: userObj.user.email,
-            friends:[],
-        }
-        collection(db,"users").doc(userData.uid).get().then( userDoc =>{
-            if(!userDoc.exists){
-                collection("users").doc(userObj.user.uid).set(userData);
-            }
-        }).catch(err => setfirebaseError(err.message))
-        
+    auth.signInWithPopup(provider).then((userObj) => {
+      const userData = {
+        uid: userObj.user.uid,
+        displayName: userObj.user.displayName,
+        email: userObj.user.email,
+        friends: [],
+      };
+      collection(db, "users")
+        .doc(userData.uid)
+        .get()
+        .then((userDoc) => {
+          if (!userDoc.exists) {
+            collection("users").doc(userObj.user.uid).set(userData);
+          }
+        })
+        .catch((err) => setfirebaseError(err.message));
     });
-}
+  }
 
-function signUp() {
-
-    setpasswordError('');
-    setemailError('');
-    setdisplayNameError('');
+  function signUp() {
+    setpasswordError("");
+    setemailError("");
+    setdisplayNameError("");
 
     // if(confirmPassword != password){
     //     setpasswordError("password doesn't match");
     //     return;
     // }
-    if(email == ''){
-        setemailError("email can't be empty")
-        return;
+    if (email == "") {
+      setemailError("email can't be empty");
+      return;
     }
-    if(password == ''){
-        setpasswordError("password can't be empty")
-        return;
+    if (password == "") {
+      setpasswordError("password can't be empty");
+      return;
     }
-    if(displayName == ''){
-        setdisplayNameError("name can't be empty")
-        return;
+    if (displayName == "") {
+      setdisplayNameError("name can't be empty");
+      return;
     }
-    createUserWithEmailAndPassword(auth, email,password).then(userObj =>{
+    createUserWithEmailAndPassword(auth, email, password)
+      .then((userObj) => {
         const userData = {
-            uid: userObj.user.uid,
-            name: displayName,
-            email: userObj.user.email,
-        }
-        collection(db,"users/"+userData.uid).get().then( userDoc =>{
-            if(!userDoc.exists){
-                db.collection("users").doc(userObj.user.uid).set(userData);
-            }
-        });
-        userObj.user.sendEmailVerification()
-    }).catch(err => setfirebaseError(err.message))
-}
+          uid: userObj.user.uid,
+          name: displayName,
+          email: userObj.user.email,
+          firstTime: true,
+        };
+        setDoc(doc(db, "users", userObj.user.uid), userData);
 
-    const [displayName, setdisplayName] = useState('');
-    const [displayNameError, setdisplayNameError] = useState('');
-    const [passwordError, setpasswordError] = useState('');
-    const [emailError, setemailError] = useState('');
-    const [email, setemail] = useState('');
-    const [password, setpassword] = useState('');
-    const [signUpMode, setsignUpMode] = useState(false);
-    const [confirmPassword, setconfirmPassword] = useState('');
+        //userObj.user.sendEmailVerification();
+      })
+      .catch((err) => setfirebaseError(err.message));
+  }
 
-    const [firebaseError, setfirebaseError] = useState('');
+  const [displayName, setdisplayName] = useState("");
+  const [displayNameError, setdisplayNameError] = useState("");
+  const [passwordError, setpasswordError] = useState("");
+  const [emailError, setemailError] = useState("");
+  const [email, setemail] = useState("");
+  const [password, setpassword] = useState("");
+  const [signUpMode, setsignUpMode] = useState(false);
+  const [confirmPassword, setconfirmPassword] = useState("");
+
+  const [firebaseError, setfirebaseError] = useState("");
 
   return (
     <ThemeProvider theme={theme}>
-      <Grid container component="main" sx={{ height: '100vh' }}>
+      <Grid container component="main" sx={{ height: "100vh" }}>
         <CssBaseline />
         <Grid
           item
@@ -129,12 +136,14 @@ function signUp() {
           sm={4}
           md={7}
           sx={{
-            backgroundImage: 'url(https://source.unsplash.com/random)',
-            backgroundRepeat: 'no-repeat',
+            backgroundImage: "url(https://source.unsplash.com/random)",
+            backgroundRepeat: "no-repeat",
             backgroundColor: (t) =>
-              t.palette.mode === 'light' ? t.palette.grey[50] : t.palette.grey[900],
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
+              t.palette.mode === "light"
+                ? t.palette.grey[50]
+                : t.palette.grey[900],
+            backgroundSize: "cover",
+            backgroundPosition: "center",
           }}
         />
         <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
@@ -142,19 +151,24 @@ function signUp() {
             sx={{
               my: 8,
               mx: 4,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
             }}
           >
-            <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
+            <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
               <LockOutlinedIcon />
             </Avatar>
             <Typography component="h1" variant="h5">
               Sign up
             </Typography>
-            <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 1 }}>
-            <TextField
+            <Box
+              component="form"
+              noValidate
+              onSubmit={handleSubmit}
+              sx={{ mt: 1 }}
+            >
+              <TextField
                 margin="normal"
                 required
                 fullWidth
@@ -162,7 +176,7 @@ function signUp() {
                 label="Name"
                 name="name"
                 autoComplete="name"
-                error={displayNameError != ''} 
+                error={displayNameError != ""}
                 helperText={displayNameError}
                 autoFocus
               />
@@ -174,7 +188,7 @@ function signUp() {
                 label="Email Address"
                 name="email"
                 autoComplete="email"
-                error={emailError != ''} 
+                error={emailError != ""}
                 helperText={emailError}
                 autoFocus
               />
@@ -186,7 +200,7 @@ function signUp() {
                 label="Password"
                 type="password"
                 id="password"
-                error={passwordError != ''}
+                error={passwordError != ""}
                 helperText={passwordError}
                 autoComplete="current-password"
               />
@@ -216,19 +230,15 @@ function signUp() {
         </Grid>
       </Grid>
 
-      <Dialog open={firebaseError != ''}>
-            <DialogTitle>Error</DialogTitle>
-            <DialogContent>
-                <Typography>
-                    {firebaseError}
-                </Typography>
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={() => setfirebaseError('')}>
-                    Okay
-                </Button>
-            </DialogActions>
-        </Dialog>
+      <Dialog open={firebaseError != ""}>
+        <DialogTitle>Error</DialogTitle>
+        <DialogContent>
+          <Typography>{firebaseError}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setfirebaseError("")}>Okay</Button>
+        </DialogActions>
+      </Dialog>
     </ThemeProvider>
   );
 }
